@@ -23,8 +23,8 @@ contract CampaignFactory {
         uint256 _fundingGoal,
         uint256 _sharedReturnPercentage,
         string memory _campaignName,
-        uint256 _fundingPeriodInDays,
-        uint256 _campaignDurationInDays,
+        uint256 _fundingPeriodInSeconds,
+        uint256 _campaignDurationInSeconds,
         string memory _nftMetadataIPFSHash
     ) public {
         require(_fundingGoal > 0, "Funding goal must be greater than zero.");
@@ -32,14 +32,14 @@ contract CampaignFactory {
             _sharedReturnPercentage <= 100,
             "Shared return percentage must be <=100."
         );
-        require(_fundingPeriodInDays > 0 && _campaignDurationInDays > _fundingPeriodInDays, "Funding period must be greater than zero and difference must be positive.");
+        require(_fundingPeriodInSeconds > 0 && _campaignDurationInSeconds > _fundingPeriodInSeconds, "Funding period must be greater than zero and difference must be positive.");
 
         campaign = new Campaign(
             _fundingGoal,
             _sharedReturnPercentage,
             _campaignName,
-            _fundingPeriodInDays,
-            _campaignDurationInDays,
+            _fundingPeriodInSeconds,
+            _campaignDurationInSeconds,
             campaignCounter+1,
             _nftMetadataIPFSHash,
             msg.sender

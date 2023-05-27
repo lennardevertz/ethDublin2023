@@ -6,18 +6,11 @@ const ETHERSCAN_API_KEY=""
 module.exports = {
   solidity: "0.8.17",
 
+  defaultNetwork: "truffledashboard",
+
   networks: {
     truffledashboard: {
       url: "http://localhost:24012/rpc"
-    },
-    polygonMumbai: {
-      url: "https://rpc-mumbai.maticvigil.com",
-      accounts: [""],
-    },
-  },
-  etherscan: {
-    apiKey: {
-      polygonMumbai: "",
-    },
+    }
   },
 };

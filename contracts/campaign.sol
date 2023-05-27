@@ -44,8 +44,8 @@ contract Campaign {
         uint256 _fundingGoal,
         uint256 _sharedReturnPercentage,
         string memory _campaignName,
-        uint256 _fundingPeriodInDays,
-        uint256 _campaignDurationInDays,
+        uint256 _fundingPeriodInSeconds,
+        uint256 _campaignDurationInSeconds,
         uint256 _campaignId,
         string memory _nftMetadataIPFSHash,
         address campaignOwner
@@ -57,8 +57,8 @@ contract Campaign {
             sharedReturnPercentage: _sharedReturnPercentage,
             campaignName: _campaignName,
             startTime: block.timestamp,
-            fundingPeriodEndTime: block.timestamp + (_fundingPeriodInDays * 86400),
-            campaignEndTime: block.timestamp + (_campaignDurationInDays * 86400),
+            fundingPeriodEndTime: block.timestamp + _fundingPeriodInSeconds,
+            campaignEndTime: block.timestamp + _campaignDurationInSeconds,
             campaignId: _campaignId,
             nftMetadataIPFSHash: _nftMetadataIPFSHash,
             distributionLocked: false,
@@ -170,6 +170,12 @@ contract Campaign {
     function _mintNFT(address _recipient, uint256 _campaignId, uint256 _donatedAmount) internal {
         erc1155Contract.mint(_recipient, _campaignId, _donatedAmount);
     }
+
+
+    function getNFTAddress() public view virtual returns (address) {
+        return address(erc1155Contract);
+    }
+
 
     /**
      * @notice Admin can claim the total funded amount
