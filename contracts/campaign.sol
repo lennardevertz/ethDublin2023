@@ -47,7 +47,8 @@ contract Campaign {
         uint256 _campaignDurationInSeconds,
         uint256 _campaignId,
         string memory _nftMetadataIPFSHash,
-        address campaignOwner
+        address campaignOwner,
+        address _nftContract
     ) {
         admin = campaignOwner;
 
@@ -64,7 +65,7 @@ contract Campaign {
             nftMinted: false
         });
 
-        erc1155Contract = new MyERC1155(campaign.nftMetadataIPFSHash);
+        erc1155Contract = MyERC1155(_nftContract);
     }
 
     modifier onlyAdmin() {
@@ -169,11 +170,6 @@ contract Campaign {
 
     function _mintNFT(address _recipient, uint256 _campaignId, uint256 _donatedAmount) internal {
         erc1155Contract.mint(_recipient, _campaignId, _donatedAmount);
-    }
-
-
-    function getNFTAddress() public view virtual returns (address) {
-        return address(erc1155Contract);
     }
 
 

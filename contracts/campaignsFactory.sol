@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "./campaign.sol";
+import "./erc1155.sol";
 
 /**
  * @title CampaignFactory
@@ -12,12 +13,18 @@ import "./campaign.sol";
 contract CampaignFactory {
 
     Campaign private campaign;
+    MyERC1155 public customERC1155;
 
     mapping(uint256 => address) public campaigns;
     uint256 public campaignCounter;
 
-    constructor() {
+    constructor(address _erc1155Address) {
+        customERC1155 = MyERC1155(_erc1155Address);
     }
+
+    error Factory_GoalMustBeBiggerThanZero();
+    error Factory_SharedReturnSmaller100();
+    error Factory_PeriodError();
 
     function setupCampaign(
         uint256 _fundingGoal,
@@ -27,12 +34,15 @@ contract CampaignFactory {
         uint256 _campaignDurationInSeconds,
         string memory _nftMetadataIPFSHash
     ) public {
-        require(_fundingGoal > 0, "Funding goal must be greater than zero.");
-        require(
-            _sharedReturnPercentage <= 100,
-            "Shared return percentage must be <=100."
-        );
-        require(_fundingPeriodInSeconds > 0 && _campaignDurationInSeconds > _fundingPeriodInSeconds, "Funding period must be greater than zero and difference must be positive.");
+        if (_fundingGoal <= 0){
+            revert Factory_GoalMustBeBiggerThanZero();
+        }
+        if ( _sharedReturnPercentage > 100) {
+            revert Factory_SharedReturnSmaller100();
+        }
+        if ( !(_fundingPeriodInSeconds > 0 && _campaignDurationInSeconds > _fundingPeriodInSeconds)) {
+            revert Factory_PeriodError();
+        }
 
         campaign = new Campaign(
             _fundingGoal,
@@ -42,12 +52,21 @@ contract CampaignFactory {
             _campaignDurationInSeconds,
             campaignCounter+1,
             _nftMetadataIPFSHash,
-            msg.sender
+            msg.sender,
+            address(customERC1155)
         );
+
+        customERC1155.addAdmin(address(campaign));
+
+        // make campaign new admin of nft contract
 
         campaigns[campaignCounter + 1] = address(campaign);
 
         campaignCounter += 1;
 
+    }
+
+    function getNFTAddress() public view virtual returns (address) {
+        return address(customERC1155);
     }
 }
