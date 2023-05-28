@@ -8,7 +8,7 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
   
     const Donation = await ethers.getContractFactory("CampaignFactory");
-    const donor = await Donation.deploy();
+    const donor = await Donation.deploy("0x287d7FaA9Da37CB3E8F5B26B2F4318bAB0346060");
     
     console.log("Donation address:", donor.address);
   }
