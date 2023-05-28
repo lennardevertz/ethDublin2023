@@ -38,7 +38,6 @@ contract Campaign {
     address[] public fundersIndex;
     uint256 public fundersCount;
     uint256 public totalFundedAmount;
-    uint256 public campaignCounter;
 
     constructor(
         uint256 _fundingGoal,
@@ -83,12 +82,14 @@ contract Campaign {
         require(block.timestamp >= campaign.startTime && block.timestamp <= campaign.fundingPeriodEndTime, "Funding period has ended.");
         require(!campaign.distributionLocked, "Campaign distribution is locked. Cannot accept new funds.");
 
+        addFunder(msg.sender);
+
         uint256 currentDonationAmount = funders[msg.sender].donatedAmount;
         uint256 newDonationAmount = currentDonationAmount + msg.value;
         totalFundedAmount += msg.value;
 
-        if (newDonationAmount > campaign.fundingGoal) {
-            uint256 exceedingAmount = campaign.fundingGoal + msg.value - totalFundedAmount;
+        if (totalFundedAmount > campaign.fundingGoal) {
+            uint256 exceedingAmount = totalFundedAmount - campaign.fundingGoal;
             newDonationAmount = newDonationAmount - exceedingAmount;
             totalFundedAmount -= exceedingAmount;
             (bool sent, ) = payable(msg.sender).call{value: exceedingAmount}("");
@@ -103,8 +104,6 @@ contract Campaign {
         if (totalFundedAmount >= campaign.fundingGoal) {
             campaign.distributionLocked = true;
         }
-
-        addFunder(msg.sender);
 
     }
 
@@ -130,7 +129,6 @@ contract Campaign {
         );
 
         uint256 contractBalance = address(this).balance;
-        require(contractBalance > 0, "Contract balance is zero.");
 
         if (!campaign.distributionLocked) {
             // Funding goal not reached, revert funded amounts
@@ -149,8 +147,10 @@ contract Campaign {
                     address funderAddress = fundersIndex[i];
                     Funder storage funder = funders[funderAddress];
                     uint256 funderShare = (contractBalance * campaign.sharedReturnPercentage * funder.percentage) / 10000;
-                    (bool sent, ) = payable(funderAddress).call{value: funderShare}("");
-                    require(sent, "Failed to send funder share.");
+                    if (funderShare > 0) {
+                        (bool sent, ) = payable(funderAddress).call{value: funderShare}("");
+                        require(sent, "Failed to send funder share.");
+                    }
 
                     if (!campaign.nftMinted) {
                         _mintNFT(funderAddress, campaign.campaignId, funder.donatedAmount);
@@ -181,12 +181,28 @@ contract Campaign {
      * @notice Admin can claim the total funded amount
      */
     function claim() public onlyAdmin {
-        require(campaign.distributionLocked && block.timestamp > campaign.fundingPeriodEndTime, "Funding goal not reached yet.");
-
         uint256 contractBalance = address(this).balance;
-        require(contractBalance > 0, "Balance is zero.");
+        require(campaign.distributionLocked && block.timestamp > campaign.fundingPeriodEndTime && contractBalance > 0, "Funding goal not reached yet.");
 
         (bool sent, ) = payable(msg.sender).call{value: contractBalance}("");
         require(sent, "Failed to send balance.");
+    }
+
+
+    function getRound() public view virtual returns (string memory) {
+        if (block.timestamp < campaign.fundingPeriodEndTime) {
+            return "funding";
+        } else if (block.timestamp < campaign.campaignEndTime) {
+            return "claiming";
+        } else if (block.timestamp >= campaign.campaignEndTime) {
+            return "distribution";
+        } else {
+            return "starting";
+        }
+    }
+
+
+    receive() external payable {
+        // Do nothing
     }
 }
